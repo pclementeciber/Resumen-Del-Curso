@@ -1,0 +1,27 @@
+Creamos el certificado SSL
+
+openssl req -newkey rsa:2048 -nodes -sha256 -keyout /mnt/nfs/cert/domain.key \
+-x509 -addext "subjectAltName = DNS:registry.pps.local" -days 3650 -out /mnt/nfs/cert/domain.crt \
+-subj "/C=ES/ST=Spain/L=Zaragoza/O=PPS SL/OU=IT Deprtment/CN=*.pps.local"
+
+Lanzamos el service 
+
+docker service create \
+--publish 5000:5000 \
+--name registry \
+--constraint 'node.role==manager' \
+--mount type=bind,src=/mnt/nfs/registry,dst=/var/lib/registry \
+--mount type=bind,src=/mnt/nfs/cert,dst=/cert \
+-e REGISTRY_HTTP_ADDR=0.0.0.0:5000 \
+-e REGISTRY_HTTP_TLS_CERTIFICATE=/cert/domain.crt \
+-e REGISTRY_HTTP_TLS_KEY=/cert/domain.key \
+--replicas 1 \
+registry:latest
+
+copiamos en todos los nodos el certificado para que funcione correcto
+
+mkdir -p /etc/docker/certs.d/registry.pps.local\:5000
+cp /mnt/nfs/cert/domain.crt /etc/docker/certs.d/registry.pps.local\:5000/ca.crt
+
+Falseamos el host 
+echo "10.100.199.200   registry.pps.local" >> /etc/hosts

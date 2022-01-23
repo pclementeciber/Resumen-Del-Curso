@@ -1,0 +1,32 @@
+Pull (or build) some image from the hub
+    docker pull ubuntu
+
+Tag the image so that it points to your registry
+    docker image tag ubuntu localhost:5000/myfirstimage
+
+Push it
+    docker push localhost:5000/myfirstimage
+
+Pull it back
+    docker pull localhost:5000/myfirstimage
+
+
+
+
+
+
+otros ejemplos:
+docker pull unfor19/docker-cats
+docker tag unfor19/docker-cats:latest registry.pps.local:5000/gatitos:1
+
+docker pull mikesir87/cats
+docker tag mikesir87/cats:latest registry.pps.local:5000/gatitos:2
+
+
+docker image push registry.pps.local:5000/gatitos:latest
+docker image push registry.pps.local:5000/gatitos:1
+docker image push registry.pps.local:5000/gatitos:2
+
+docker service create --publish 80:8080 --name gatitos -e APP_NAME=dark -e FROM_AUTHOR=darker --replicas 1 registry.pps.local:5000/gatitos:latest
+
+docker service create --publish 80:5000 --name gatitos --constraint 'node.hostname==worker02' --constraint 'node.hostname==worker01'--replicas 1 registry.pps.local:5000/gatitos:2

@@ -1,0 +1,14 @@
+Creamos el Servicio
+
+docker service create \
+--publish 5000:5000 \
+--name registry \
+--constraint 'node.role==manager' \
+--mount type=bind,src=/mnt/nfs/registry,dst=/var/lib/registry \
+--mount type=bind,src=/mnt/nfs/cert,dst=/cert \
+-e REGISTRY_HTTP_ADDR=0.0.0.0:5000 \
+--replicas 1 \
+registry:latest
+
+Falseamos el host 
+echo "10.100.199.200   registry.pps.local" >> /etc/hosts
