@@ -1,0 +1,92 @@
+$install_docker_script = <<SCRIPT
+echo Installing Docker...
+curl -sSL https://get.docker.com/ | sh
+usermod -aG docker vagrant
+SCRIPT
+
+$manager_script = <<SCRIPT
+echo Swarm Init...
+docker swarm init --listen-addr 10.100.199.200:2377 --advertise-addr 10.100.199.200:2377
+docker swarm join-token --quiet worker > /mnt/nfs/worker_token
+curl -L https://downloads.portainer.io/portainer-agent-stack.yml -o portainer-agent-stack.yml
+docker stack deploy -c portainer-agent-stack.yml portainer
+SCRIPT
+
+$worker_script = <<SCRIPT
+echo Swarm Join...
+docker swarm join --token $(cat /mnt/nfs/worker_token) 10.100.199.200:2377
+SCRIPT
+
+$manager_nfs = <<SCRIPT
+apt-get update
+apt-get install -y nfs-kernel-server
+mkdir /mnt/nfs
+chown nobody:nogroup /mnt/nfs
+echo "/mnt/nfs   10.100.199.201(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports 
+echo "/mnt/nfs   10.100.199.202(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports 
+systemctl restart nfs-kernel-server
+SCRIPT
+
+$worker_nfs = <<SCRIPT
+apt-get update
+apt install -y nfs-common
+mkdir /mnt/nfs
+echo "10.100.199.200:/mnt/nfs   /mnt/nfs   nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+mount -a
+SCRIPT
+
+Vagrant.configure('2') do |config|
+
+  vm_box = 'ubuntu/focal64'
+
+  config.vm.boot_timeout = 300
+  config.vm.define :manager, primary: true  do |manager|
+    manager.vm.box = vm_box
+    manager.vm.box_check_update = true
+	manager.vm.disk :disk, size: "100GB", primary: true
+    manager.vm.network :private_network, ip: "10.100.199.200"
+    manager.vm.network :forwarded_port, guest: 8080, host: 8080
+    manager.vm.network :forwarded_port, guest: 9443, host: 9443
+	manager.vm.network :forwarded_port, guest: 9000, host: 9000
+    manager.vm.hostname = "manager"
+    manager.vm.provision "shell", inline: $manager_nfs, privileged: true
+    manager.vm.provision "shell", inline: $install_docker_script, privileged: true
+    manager.vm.provision "shell", inline: $manager_script, privileged: true
+    manager.vm.provider "virtualbox" do |vb|
+      vb.name = "manager"
+      vb.memory = "2048"
+    end
+  end
+
+
+    config.vm.define "worker01" do |worker|
+      worker.vm.box = vm_box
+      worker.vm.box_check_update = true
+	  worker.vm.disk :disk, size: "50GB", primary: true
+      worker.vm.network :private_network, ip: "10.100.199.201"
+      worker.vm.hostname = "worker01"
+      worker.vm.provision "shell", inline: $worker_nfs, privileged: true
+      worker.vm.provision "shell", inline: $install_docker_script, privileged: true
+      worker.vm.provision "shell", inline: $worker_script, privileged: true
+      worker.vm.provider "virtualbox" do |vb|
+        vb.name = "worker01"
+        vb.memory = "2048"
+      end
+    end
+
+    config.vm.define "worker02" do |worker|
+        worker.vm.box = vm_box
+        worker.vm.box_check_update = true
+        worker.vm.disk :disk, size: "50GB", primary: true
+        worker.vm.network :private_network, ip: "10.100.199.202"
+        worker.vm.hostname = "worker02"
+        worker.vm.provision "shell", inline: $worker_nfs, privileged: true
+        worker.vm.provision "shell", inline: $install_docker_script, privileged: true
+        worker.vm.provision "shell", inline: $worker_script, privileged: true
+        worker.vm.provider "virtualbox" do |vb|
+          vb.name = "worker02"
+          vb.memory = "2048"
+        end
+      end
+
+end
