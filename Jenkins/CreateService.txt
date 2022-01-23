@@ -1,0 +1,17 @@
+creamos la imagen y la pusheamos
+docker build . -t registry.pps.local:5000/jenkins:latest
+docker push registry.pps.local:5000/jenkins:latest
+
+mkdir -p /mnt/nfs/jenkins/home
+
+docker service create \
+--publish 8080:8080 \
+--publish 50000:50000 \
+--name jenkins \
+--constraint 'node.role==manager' \
+--mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
+--mount type=bind,src=/mnt/nfs/jenkins/home,dst=/var/jenkins_home \
+--mount type=bind,src=/home/vagrant/.ssh,dst=/var/jenkins_home/.ssh \
+--host "registry.pps.local:10.100.199.200" \
+--replicas 1 \
+registry.pps.local:5000/jenkins:latest

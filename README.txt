@@ -63,7 +63,7 @@ Registry --> Harbor *(Pendiente)
     -> Replicar las imagenes de docker en nuestro cluster de swarm    
 
 --------------------------------------------------------
-Jenkins 
+Jenkins -> https://github.com/pclementeciber/repaso/blob/main/Jenkins/
     --> Jobs
     --> JenkinsPipeline
 

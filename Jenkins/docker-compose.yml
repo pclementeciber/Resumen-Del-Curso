@@ -1,0 +1,29 @@
+version: "3.2"
+
+services:
+  jenkins:
+    image: registry.pps.local:5000/jenkins:latest
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname==manager"
+    extra_hosts:
+      - "registry.pps.local:10.100.199.200"
+    networks:
+      - jenkins-net
+    dns:
+      - "8.8.8.8"
+    ports:
+      - 8080:8080
+    volumes:
+       - /var/run/docker.sock:/var/run/docker.sock
+       - type: bind
+         source: ./home
+         target: /var/jenkins_home    
+       - type: bind
+         source: ~/.ssh
+         target: /var/jenkins_home/.ssh
+networks:
+  jenkins-net:
+    driver: overlay
+    external: true
