@@ -26,7 +26,6 @@ workflow-durable-task-step
 ssh-credentials
 git-server
 pipeline-milestone-step
-publish-over-ssh
 github
 pipeline-input-step
 ace-editor
