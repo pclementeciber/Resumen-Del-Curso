@@ -12,3 +12,11 @@ registry:latest
 
 Falseamos el host 
 echo "10.100.199.200   registry.pps.local" >> /etc/hosts
+
+creamos el fichero vi /etc/docker/daemon.json
+
+añadimos 
+
+{
+  "insecure-registries" : ["registry.pps.local:5000"]
+}
